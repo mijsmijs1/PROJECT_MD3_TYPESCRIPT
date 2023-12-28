@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:@localhost:3306/phuquyDB"
+}
+
+model users {
+  id           Int            @id @default(autoincrement())
+  userName     String         @unique @db.Char(255)
+  email        String         @unique @db.Char(255)
+  password     String         @db.Char(255)
+  emailConfirm Boolean        @default(false)
+  status       Boolean        @default(true)
+  role         UserRole       @default(member)
+  createAt     String
+  updateAt     String
+  avatar       String         @db.Text
+  address      address[]
+  user_ip_list user_ip_list[]
+  receipts     receipts[]
+}
+
+model user_ip_list {
+  id         Int     @id @default(autoincrement())
+  ip         String  @db.Char(255)
+  status     Boolean @default(true)
+  userId     Int
+  createAt   String
+  deviceName String
+  users      users?  @relation(fields: [userId], references: [id])
+  usersId    Int?
+
+  @@index([userId], map: "user_ip_list_userId_fkey")
+}
+
+model address {
+  id        Int    @id @default(autoincrement())
+  title     String @unique @db.Char(255)
+  provineId String
+  userId    Int
+  users     users? @relation(fields: [userId], references: [id])
+  usersId   Int?
+
+  @@index([userId], map: "address_userId_fkey")
+}
+
+model categories {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique @db.Char(255)
+  status   Boolean    @default(true)
+  products products[]
+}
+
+model products {
+  id         Int               @id @default(autoincrement())
+  name       String            @unique @db.Char(255)
+  price      Int
+  desc       String            @db.LongText
+  status     Boolean           @default(true)
+  avatar     String            @db.Char(255)
+  categoryId Int
+  category   categories?       @relation(fields: [categoryId], references: [id])
+  pictures   pictures[]
+  sold       receipt_details[]
+
+  @@index([categoryId], map: "products_categoryId_fkey")
+}
+
+model pictures {
+  id        Int       @id @default(autoincrement())
+  url       String    @db.Char(255)
+  productId Int
+  product   products? @relation(fields: [productId], references: [id])
+
+  @@index([productId], map: "pictures_productId_fkey")
+}
+
+model receipts {
+  id         Int               @id @default(autoincrement())
+  total      Int               @default(0)
+  createAt   String
+  updateAt   String
+  paid       Boolean           @default(false)
+  paidAt     String?
+  payMethod  payMethod?        @default(cash)
+  userId     Int
+  status     ReceiptStatus     @default(shopping)
+  pending    String?
+  acceptAt   String?
+  shippingAt String?
+  doneAt     String?
+  user       users?            @relation(fields: [userId], references: [id])
+  usersId    Int?
+  detail     receipt_details[]
+
+  @@index([userId], map: "receipts_userId_fkey")
+}
+
+model receipt_details {
+  id        Int      @id @default(autoincrement())
+  receiptId Int
+  productId Int
+  quantity  Int
+  note      String   @default("")
+  product   products @relation(fields: [productId], references: [id])
+  receipt   receipts @relation(fields: [receiptId], references: [id])
+
+  @@index([productId], map: "receipt_details_productId_fkey")
+  @@index([receiptId], map: "receipt_details_receiptId_fkey")
+}
+
+enum ReceiptStatus {
+  shopping
+  pending
+  accepted
+  shipping
+  done
+}
+
+enum payMethod {
+  zalo_pay
+  cash
+}
+
+enum UserRole {
+  member
+  admin
+}
